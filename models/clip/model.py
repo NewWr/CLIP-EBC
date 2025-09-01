@@ -127,10 +127,8 @@ class CLIP_EBC(nn.Module):
 
         # 添加可学习温度参数用于Log-Mean-Exp池化
         # 每个类别（bin）一个温度参数，初始化为1.0
-        # self.temperature = nn.Parameter(torch.ones(len(bins)), requires_grad=True)
+        self.temperature = nn.Parameter(torch.ones(len(bins)), requires_grad=True)
 
-        # 使用raw_temperature进行重参数化，约束温度范围到[0.1, 5.0] 8/27
-        self.raw_temperature = nn.Parameter(torch.zeros(len(bins)), requires_grad=True)
 
     def _get_text_prompts(self) -> None:
         """
@@ -259,12 +257,7 @@ class CLIP_EBC(nn.Module):
         # 应用可学习温度参数的Log-Mean-Exp池化
         # global_logits_n = τ_n * log(mean(exp(logits_n / τ_n)))
         # 等价于: τ_n * (logsumexp(logits_n / τ_n) - log(H*W))
-        # temperature = self.temperature.to(device).view(1, -1, 1)  # (1, N, 1)
-        # scaled_logits = logits_flat / temperature  # (B, N, H*W)
-        # global_logits = temperature.squeeze(-1) * (torch.logsumexp(scaled_logits, dim=2) - math.log(H * W))  # (B, N)
-        
-        # 约束温度参数到[0.1, 5.0]范围 8/27
-        temperature = 0.1 + 4.9 * torch.sigmoid(self.raw_temperature.to(device)).view(1, -1, 1)  # (1, N, 1)
+        temperature = self.temperature.to(device).view(1, -1, 1)  # (1, N, 1)
         scaled_logits = logits_flat / temperature  # (B, N, H*W)
         global_logits = temperature.squeeze(-1) * (torch.logsumexp(scaled_logits, dim=2) - math.log(H * W))  # (B, N)
 

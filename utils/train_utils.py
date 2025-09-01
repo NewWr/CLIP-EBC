@@ -1,7 +1,7 @@
 import torch
 from torch import nn, Tensor
 
-from torch.optim import Adam
+from torch.optim import AdamW
 from torch.cuda.amp import GradScaler
 from torch.optim.lr_scheduler import LambdaLR
 
@@ -79,13 +79,13 @@ def get_loss_fn(args: ArgumentParser) -> nn.Module:
             weight_regression=1.0,
             weight_classification=1.0,
             regression_loss="huber",
-            use_uncertainty=False
+            use_uncertainty=True
         )
     return loss_fn
 
 
-def get_optimizer(args: ArgumentParser, model: nn.Module) -> Tuple[Adam, LambdaLR]:
-    optimizer = Adam(
+def get_optimizer(args: ArgumentParser, model: nn.Module) -> Tuple[AdamW, LambdaLR]:
+    optimizer = AdamW(
         params=filter(lambda p: p.requires_grad, model.parameters()),
         lr=args.lr,
         weight_decay=args.weight_decay
@@ -110,10 +110,10 @@ def get_optimizer(args: ArgumentParser, model: nn.Module) -> Tuple[Adam, LambdaL
 def load_checkpoint(
     args: ArgumentParser,
     model: nn.Module,
-    optimizer: Adam,
+    optimizer: AdamW,
     scheduler: LambdaLR,
     grad_scaler: GradScaler,
-) -> Tuple[nn.Module, Adam, Union[LambdaLR, None], GradScaler, int, Union[Dict[str, float], None], Dict[str, List[float]], Dict[str, float]]:
+) -> Tuple[nn.Module, AdamW, Union[LambdaLR, None], GradScaler, int, Union[Dict[str, float], None], Dict[str, List[float]], Dict[str, float]]:
     ckpt_path = os.path.join(args.ckpt_dir, "ckpt.pth")
     if os.path.exists(ckpt_path):
         ckpt = torch.load(ckpt_path)

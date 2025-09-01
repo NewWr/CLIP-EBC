@@ -223,15 +223,6 @@ class RandomGrayscale(object):
         return image, label
     
 
-class GaussianBlur(object):
-    def __init__(self, kernel_size: int, sigma: Optional[float] = None) -> None:
-        self.kernel_size = kernel_size
-        self.sigma = sigma
-
-    def __call__(self, image: Tensor, label: Tensor) -> Tuple[Tensor, Tensor]:
-        return TF.gaussian_blur(image, self.kernel_size, self.sigma), label
-
-
 class RandomApply(object):
     def __init__(self, transforms: Tuple[Callable, ...], p: Union[float, Tuple[float, ...]] = 0.5) -> None:
         self.transforms = transforms

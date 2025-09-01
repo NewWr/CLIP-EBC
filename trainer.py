@@ -39,17 +39,12 @@ parser.add_argument("--dataset", type=str, default='ukb', help="The dataset to t
 parser.add_argument("--batch_size", type=int, default=64, help="The training batch size.")
 parser.add_argument("--num_crops", type=int, default=1, help="The number of crops for multi-crop training.")
 parser.add_argument("--min_scale", type=float, default=1.0, help="The minimum scale for random scale augmentation.")
-parser.add_argument("--max_scale", type=float, default=2.0, help="The maximum scale for random scale augmentation.")
+parser.add_argument("--max_scale", type=float, default=1.2, help="The maximum scale for random scale augmentation.")
 parser.add_argument("--brightness", type=float, default=0.1, help="The brightness factor for random color jitter augmentation.")
 parser.add_argument("--contrast", type=float, default=0.1, help="The contrast factor for random color jitter augmentation.")
 parser.add_argument("--saturation", type=float, default=0.1, help="The saturation factor for random color jitter augmentation.")
 parser.add_argument("--hue", type=float, default=0.0, help="The hue factor for random color jitter augmentation.")
-parser.add_argument("--kernel_size", type=int, default=5, help="The kernel size for Gaussian blur augmentation.")
-parser.add_argument("--saltiness", type=float, default=1e-3, help="The saltiness for pepper salt noise augmentation.")
-parser.add_argument("--spiciness", type=float, default=1e-3, help="The spiciness for pepper salt noise augmentation.")
 parser.add_argument("--jitter_prob", type=float, default=0.2, help="The probability for random color jitter augmentation.")
-parser.add_argument("--blur_prob", type=float, default=0.2, help="The probability for Gaussian blur augmentation.")
-parser.add_argument("--noise_prob", type=float, default=0.5, help="The probability for pepper salt noise augmentation.")
 
 # Parameters for evaluation
 parser.add_argument("--sliding_window", action="store_true", help="Use sliding window strategy for evaluation.")
@@ -64,10 +59,10 @@ parser.add_argument("--count_loss", type=str, default="mae", choices=["mae", "ms
 
 # Parameters for optimizer (Adam)
 parser.add_argument("--lr", type=float, default=5e-5, help="The learning rate.")
-parser.add_argument("--weight_decay", type=float, default=1e-4, help="The weight decay.")
+parser.add_argument("--weight_decay", type=float, default=1e-3, help="The weight decay.")
 
 # Parameters for learning rate scheduler
-parser.add_argument("--warmup_epochs", type=int, default=10, help="Number of epochs for warmup. The learning rate will increase from eta_min to lr.")
+parser.add_argument("--warmup_epochs", type=int, default=5, help="Number of epochs for warmup. The learning rate will increase from eta_min to lr.")
 parser.add_argument("--warmup_lr", type=float, default=1e-6, help="Learning rate for warmup.")
 parser.add_argument("--T_0", type=int, default=5, help="Number of epochs for the first restart.")
 parser.add_argument("--T_mult", type=int, default=2, help="A factor increases T_0 after a restart.")
@@ -182,7 +177,6 @@ def run(local_rank: int, nprocs: int, args: ArgumentParser) -> None:
             update_train_result(epoch, loss_info, writer)
             log(logger, None, None, loss_info=loss_info, message="\n" * 2 if not eval else None)
 
-            # 在 run 函数中的评估部分（约第189行）
             if eval:
                 print("Evaluating")
                 state_dict = model.module.state_dict() if ddp else model.state_dict()
@@ -191,9 +185,6 @@ def run(local_rank: int, nprocs: int, args: ArgumentParser) -> None:
                     model_without_ddp,
                     val_loader,
                     device,
-                    args.sliding_window,
-                    args.input_size,
-                    args.stride,
                 )
                 hist_val_scores, best_val_scores = update_eval_result(epoch, curr_val_scores, hist_val_scores, best_val_scores, writer, state_dict, os.path.join(args.ckpt_dir))
                 log(logger, None, None, None, curr_val_scores, best_val_scores, message="\n" * 3)
@@ -242,17 +233,6 @@ def main():
     
     if "clip" not in args.model:
         args.prompt_type = None
-
-    if args.sliding_window:
-        args.window_size = args.input_size if args.window_size is None else args.window_size
-        args.stride = args.input_size if args.stride is None else args.stride
-        assert not (args.zero_pad_to_multiple and args.resize_to_multiple), "Cannot use both zero pad and resize to multiple."
-
-    else:
-        args.window_size = None
-        args.stride = None
-        args.zero_pad_to_multiple = False
-        args.resize_to_multiple = False
 
     # args.nprocs = torch.cuda.device_count()
     args.nprocs = 1

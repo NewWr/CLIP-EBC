@@ -34,7 +34,7 @@ class BloodIndicatorLoss(nn.Module):
         self.use_uncertainty = use_uncertainty
         
         # 分类损失
-        self.cross_entropy_fn = nn.CrossEntropyLoss(reduction="mean", label_smoothing=0.1)
+        self.cross_entropy_fn = nn.CrossEntropyLoss(reduction="mean", label_smoothing=0.05)
         
         # 回归损失
         regression_loss = regression_loss.lower()
@@ -105,8 +105,8 @@ class BloodIndicatorLoss(nn.Module):
         # 回归损失
         regression_loss = self.regression_fn(pred_value, target_value)
         # 自适应权重（可选）
-        adaptive_weights = self._adaptive_weight(pred_value, target_value)
-        weighted_regression_loss = (regression_loss * adaptive_weights.mean())
+        # adaptive_weights = self._adaptive_weight(pred_value, target_value)
+        # weighted_regression_loss = (regression_loss * adaptive_weights.mean())
         # 不确定性损失（可选）
         uncertainty_loss = torch.tensor(0.0, device=pred_value.device)
         if self.use_uncertainty and pred_uncertainty is not None:
@@ -116,7 +116,7 @@ class BloodIndicatorLoss(nn.Module):
         # 总损失
         total_loss = (
             self.weight_classification * classification_loss + 
-            self.weight_regression * weighted_regression_loss
+            self.weight_regression * regression_loss
         )
         if self.use_uncertainty:
             total_loss += 0.1 * uncertainty_loss  # 不确定性损失权重较小
@@ -125,7 +125,7 @@ class BloodIndicatorLoss(nn.Module):
             "total_loss": total_loss.detach(),
             "classification_loss": classification_loss.detach(),
             "regression_loss": regression_loss.detach(),
-            "weighted_regression_loss": weighted_regression_loss.detach(),
+            #"weighted_regression_loss": weighted_regression_loss.detach(),
         }
         if self.use_uncertainty:
             loss_info["uncertainty_loss"] = uncertainty_loss.detach()

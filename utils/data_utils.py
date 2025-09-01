@@ -24,18 +24,8 @@ def get_dataloader(args: ArgumentParser, split: str = "train", ddp: bool = False
             datasets.RandomHorizontalFlip(),
             datasets.RandomApply([
                 datasets.ColorJitter(brightness=args.brightness, contrast=args.contrast, saturation=args.saturation, hue=args.hue),
-                datasets.GaussianBlur(kernel_size=args.kernel_size, sigma=(0.1, 5.0)),
-                datasets.PepperSaltNoise(saltiness=args.saltiness, spiciness=args.spiciness),
-            ], p=(args.jitter_prob, args.blur_prob, args.noise_prob)),
+            ], p=args.jitter_prob),
         ])
-
-    elif args.sliding_window:
-        if args.resize_to_multiple:
-            transforms = datasets.Resize2Multiple(args.window_size, stride=args.stride)
-        elif args.zero_pad_to_multiple:
-            transforms = datasets.ZeroPad2Multiple(args.window_size, stride=args.stride)
-        else:
-            transforms = None
 
     else:
         transforms = None
@@ -94,8 +84,7 @@ def get_ukb_dataloader(args: ArgumentParser, split: str = "train", ddp: bool = F
             datasets.RandomHorizontalFlip(),
             datasets.RandomApply([
                 datasets.ColorJitter(brightness=args.brightness, contrast=args.contrast, saturation=args.saturation, hue=args.hue),
-                datasets.GaussianBlur(kernel_size=args.kernel_size, sigma=(0.1, 5.0)),
-            ], p=(args.jitter_prob, args.blur_prob)),
+            ], p=args.jitter_prob),
         ])
     else:
         transforms = None
