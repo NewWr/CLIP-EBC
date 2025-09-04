@@ -29,7 +29,7 @@ parser.add_argument("--granularity", type=str, default="fine", choices=["fine", 
 parser.add_argument("--num_vpt", type=int, default=32, help="The number of visual prompt tokens.")
 parser.add_argument("--vpt_drop", type=float, default=0.0, help="The dropout rate for visual prompt tokens.")
 parser.add_argument("--shallow_vpt", action="store_true", help="Use shallow visual prompt tokens.")
-parser.add_argument("--weight_path", type=str, default="/opt/DM/OCT/CLIP_Code/CLIP-EBC/checkpoints/ukb/clip_resnet50_word_224_8_15_fine_1.0_mae/best_mae_0.pth", help="The path to the weights of the model.")
+parser.add_argument("--weight_path", type=str, default="/opt/DM/OCT/CLIP_Code/CLIP-EBC/checkpoints/ukb/clip_resnet50_word_224_8_15_fine_1.0_mae/best_mae_0.pth", help="The pat to the weights of the model.")
 
 # Parameters for UKB dataset
 parser.add_argument('--dataset_type', type=str, default='ukb', choices=['crowd', 'ukb'], 

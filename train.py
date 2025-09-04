@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
-from torch.cuda.amp import GradScaler, autocast
+from torch.cuda.amp import GradScaler
 import numpy as np
 from tqdm import tqdm
 from typing import Dict, Tuple
@@ -22,6 +22,7 @@ def train(
     nprocs: int,
 ) -> Tuple[nn.Module, Optimizer, GradScaler, Dict[str, float]]:
     model.train()
+    model.refresh_text_prompts()
     info = None
     data_iter = tqdm(data_loader) if rank == 0 else data_loader
     ddp = nprocs > 1
@@ -33,7 +34,7 @@ def train(
         
         with torch.set_grad_enabled(True):
             if grad_scaler is not None:
-                with autocast(enabled=grad_scaler.is_enabled()):
+                with torch.amp.autocast(device_type="cuda", enabled=grad_scaler.is_enabled()):
                     if not regression:
                         pred_class, pred_value = model(image)
                         loss, loss_info = loss_fn(pred_class, pred_value, blood_indicator)

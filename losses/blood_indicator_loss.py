@@ -1,26 +1,52 @@
 import torch
 from torch import nn, Tensor
 from typing import Any, List, Tuple, Dict, Optional
+import torch.nn.functional as F
+
+
+class FocalLoss(nn.Module):
+    """
+    Focal Loss实现，用于处理类别不平衡问题
+    """
+    def __init__(self, alpha: float = 1.0, gamma: float = 2.0, reduction: str = 'mean'):
+        super().__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
+        
+    def forward(self, inputs: Tensor, targets: Tensor) -> Tensor:
+        ce_loss = F.cross_entropy(inputs, targets, reduction='none')
+        pt = torch.exp(-ce_loss)
+        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
+        
+        if self.reduction == 'mean':
+            return focal_loss.mean()
+        elif self.reduction == 'sum':
+            return focal_loss.sum()
+        else:
+            return focal_loss
 
 
 class BloodIndicatorLoss(nn.Module):
     """
-    血液指标预测损失函数，基于DACELoss的设计思想
+    血液指标预测损失函数（简化版）
     结合分类和回归损失，用于眼底彩照预测血液指标
     """
     def __init__(
         self,
-        indicator_ranges: List[Tuple[float, float]],  # 兼容旧配置：将被视为 bins
+        indicator_ranges: List[Tuple[float, float]],
         weight_regression: float = 1.0,
         weight_classification: float = 1.0,
         regression_loss: str = "mse",  # "mse", "mae", "huber"
-        use_uncertainty: bool = False,  # 是否使用不确定性估计
-        bins: Optional[List[Tuple[float, float]]] = None,  # 新增：按bins进行分类监督
+        use_uncertainty: bool = False,
+        bins: Optional[List[Tuple[float, float]]] = None,
+        focal_alpha: float = 1.0,
+        focal_gamma: float = 2.0,
         **kwargs: Any
     ) -> None:
         super().__init__()
         
-        # 统一到 self.bins（优先使用 bins，否则回退到 indicator_ranges）
+        # 统一到 self.bins
         ranges = indicator_ranges if bins is None else bins
         assert len(ranges) > 0, f"Expected at least one bin, got {ranges}"
         assert all([len(r) == 2 for r in ranges]), f"Expected all bins to be of length 2, got {ranges}"
@@ -32,9 +58,9 @@ class BloodIndicatorLoss(nn.Module):
         self.weight_regression = weight_regression
         self.weight_classification = weight_classification
         self.use_uncertainty = use_uncertainty
-        
-        # 分类损失
-        self.cross_entropy_fn = nn.CrossEntropyLoss(reduction="mean", label_smoothing=0.05)
+
+        # 分类损失：使用Focal Loss替代标准交叉熵
+        self.focal_loss_fn = FocalLoss(alpha=focal_alpha, gamma=focal_gamma, reduction="mean")
         
         # 回归损失
         regression_loss = regression_loss.lower()
@@ -76,113 +102,50 @@ class BloodIndicatorLoss(nn.Module):
 
         return class_labels
     
-    def _adaptive_weight(self, pred_values: Tensor, target_values: Tensor) -> Tensor:
-        """
-        根据预测误差自适应调整损失权重
-        """
-        error = torch.abs(pred_values - target_values)
-        # 使用sigmoid函数将误差映射到权重
-        weights = torch.sigmoid(error)
-        return weights
-    
     def forward(
         self, 
-        pred_class: Tensor,  # [batch_size, num_classes] 分类预测
+        pred_class: Tensor,  # [batch_size, num_classes] 分类预测 logits
         pred_value: Tensor,  # [batch_size] 回归预测值
         target_value: Tensor,  # [batch_size] 目标血液指标值
         pred_uncertainty: Optional[Tensor] = None  # [batch_size] 预测不确定性（可选）
     ) -> Tuple[Tensor, Dict[str, Tensor]]:
         """
-        前向传播计算损失
+        前向传播计算损失（简化版）
         """
         assert pred_class.size(0) == pred_value.size(0) == target_value.size(0), \
             f"Batch sizes must match: {pred_class.size(0)}, {pred_value.size(0)}, {target_value.size(0)}"
         
-        # 生成分类标签
-        target_class = self._classify_indicator(target_value)
-        # 分类损失
-        classification_loss = self.cross_entropy_fn(pred_class, target_class)
-        # 回归损失
+        device = pred_class.device
+
+        # 分类目标
+        target_class = self._classify_indicator(target_value)  # [B]
+
+        # === 分类损失：使用Focal Loss ===
+        classification_loss = self.focal_loss_fn(pred_class, target_class)
+
+        # === 回归损失：原始计算 ===
         regression_loss = self.regression_fn(pred_value, target_value)
-        # 自适应权重（可选）
-        # adaptive_weights = self._adaptive_weight(pred_value, target_value)
-        # weighted_regression_loss = (regression_loss * adaptive_weights.mean())
+
         # 不确定性损失（可选）
-        uncertainty_loss = torch.tensor(0.0, device=pred_value.device)
+        uncertainty_loss = torch.tensor(0.0, device=device)
         if self.use_uncertainty and pred_uncertainty is not None:
-            # 不确定性应该与预测误差相关
             prediction_error = torch.abs(pred_value - target_value)
             uncertainty_loss = self.uncertainty_fn(pred_uncertainty, prediction_error)
+
         # 总损失
         total_loss = (
             self.weight_classification * classification_loss + 
             self.weight_regression * regression_loss
         )
         if self.use_uncertainty:
-            total_loss += 0.1 * uncertainty_loss  # 不确定性损失权重较小
+            total_loss += 0.1 * uncertainty_loss
+
         # 损失信息
         loss_info = {
             "total_loss": total_loss.detach(),
             "classification_loss": classification_loss.detach(),
             "regression_loss": regression_loss.detach(),
-            #"weighted_regression_loss": weighted_regression_loss.detach(),
         }
         if self.use_uncertainty:
             loss_info["uncertainty_loss"] = uncertainty_loss.detach()
         return total_loss, loss_info
-
-
-class MultiIndicatorLoss(nn.Module):
-    """
-    多血液指标预测损失函数
-    用于同时预测多个血液指标的场景
-    """
-    def __init__(
-        self,
-        indicator_configs: Dict[str, Dict],  # 每个指标的配置
-        indicator_weights: Optional[Dict[str, float]] = None,  # 各指标的权重
-        **kwargs: Any
-    ) -> None:
-        super().__init__()
-        
-        self.indicator_names = list(indicator_configs.keys())
-        self.indicator_weights = indicator_weights or {name: 1.0 for name in self.indicator_names}
-        
-        # 为每个指标创建单独的损失函数
-        self.indicator_losses = nn.ModuleDict()
-        for name, config in indicator_configs.items():
-            self.indicator_losses[name] = BloodIndicatorLoss(**config, **kwargs)
-    
-    def forward(
-        self,
-        predictions: Dict[str, Tuple[Tensor, Tensor]],  # {indicator_name: (pred_class, pred_value)}
-        targets: Dict[str, Tensor],  # {indicator_name: target_value}
-        uncertainties: Optional[Dict[str, Tensor]] = None
-    ) -> Tuple[Tensor, Dict[str, Any]]:
-        """
-        多指标损失计算
-        """
-        total_loss = torch.tensor(0.0, device=next(iter(targets.values())).device)
-        all_loss_info = {}
-        
-        for name in self.indicator_names:
-            if name in predictions and name in targets:
-                pred_class, pred_value = predictions[name]
-                target_value = targets[name]
-                pred_uncertainty = uncertainties.get(name) if uncertainties else None
-                
-                loss, loss_info = self.indicator_losses[name](
-                    pred_class, pred_value, target_value, pred_uncertainty
-                )
-                
-                weighted_loss = loss * self.indicator_weights[name]
-                total_loss += weighted_loss
-                
-                # 记录各指标的损失信息
-                all_loss_info[f"{name}_loss"] = weighted_loss.detach()
-                for key, value in loss_info.items():
-                    all_loss_info[f"{name}_{key}"] = value
-        
-        all_loss_info["total_loss"] = total_loss.detach()
-        
-        return total_loss, all_loss_info

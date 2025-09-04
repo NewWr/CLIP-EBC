@@ -79,7 +79,7 @@ def get_loss_fn(args: ArgumentParser) -> nn.Module:
             weight_regression=1.0,
             weight_classification=1.0,
             regression_loss="huber",
-            use_uncertainty=True
+            use_uncertainty=False,
         )
     return loss_fn
 

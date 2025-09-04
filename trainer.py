@@ -37,9 +37,9 @@ parser.add_argument("--shallow_vpt", action="store_true", help="Use shallow visu
 # Parameters for dataset
 parser.add_argument("--dataset", type=str, default='ukb', help="The dataset to train on.")
 parser.add_argument("--batch_size", type=int, default=64, help="The training batch size.")
-parser.add_argument("--num_crops", type=int, default=1, help="The number of crops for multi-crop training.")
-parser.add_argument("--min_scale", type=float, default=1.0, help="The minimum scale for random scale augmentation.")
-parser.add_argument("--max_scale", type=float, default=1.2, help="The maximum scale for random scale augmentation.")
+parser.add_argument("--num_crops", type=int, default=2, help="The number of crops for multi-crop training.")
+parser.add_argument("--min_scale", type=float, default=0.8, help="The minimum scale for random scale augmentation.")
+parser.add_argument("--max_scale", type=float, default=1.0, help="The maximum scale for random scale augmentation.")
 parser.add_argument("--brightness", type=float, default=0.1, help="The brightness factor for random color jitter augmentation.")
 parser.add_argument("--contrast", type=float, default=0.1, help="The contrast factor for random color jitter augmentation.")
 parser.add_argument("--saturation", type=float, default=0.1, help="The saturation factor for random color jitter augmentation.")
@@ -62,7 +62,7 @@ parser.add_argument("--lr", type=float, default=5e-5, help="The learning rate.")
 parser.add_argument("--weight_decay", type=float, default=1e-3, help="The weight decay.")
 
 # Parameters for learning rate scheduler
-parser.add_argument("--warmup_epochs", type=int, default=5, help="Number of epochs for warmup. The learning rate will increase from eta_min to lr.")
+parser.add_argument("--warmup_epochs", type=int, default=10, help="Number of epochs for warmup. The learning rate will increase from eta_min to lr.")
 parser.add_argument("--warmup_lr", type=float, default=1e-6, help="Learning rate for warmup.")
 parser.add_argument("--T_0", type=int, default=5, help="Number of epochs for the first restart.")
 parser.add_argument("--T_mult", type=int, default=2, help="A factor increases T_0 after a restart.")

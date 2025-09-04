@@ -7,6 +7,7 @@ import pandas as pd
 from PIL import Image
 import numpy as np
 from typing import Optional, Callable, Union, Tuple
+from sklearn.model_selection import train_test_split
 
 
 class UKBDataset(Dataset):
@@ -19,6 +20,8 @@ class UKBDataset(Dataset):
         transforms: Optional[Callable] = None,
         return_filename: bool = False,
         num_crops: int = 1,
+        stratify_bins: int = 15,
+        random_state: int = 42,
     ) -> None:
         """
         UKB Dataset for regression tasks, compatible with CLIP-EBC data processing.
@@ -31,9 +34,12 @@ class UKBDataset(Dataset):
             transforms: Optional transform to be applied on images
             return_filename: Whether to return filename
             num_crops: Number of crops per image (for training augmentation)
+            stratify_bins: Number of bins for stratified sampling based on target values
+            random_state: Random seed for reproducible splits
         """
         assert split in ["train", "val", "test", "all"], f"Split {split} is not available."
         assert num_crops > 0, f"num_crops should be positive, got {num_crops}."
+        assert stratify_bins > 0, f"stratify_bins should be positive, got {stratify_bins}."
         
         self.excel_path = excel_path
         self.data_root = data_root
@@ -42,6 +48,8 @@ class UKBDataset(Dataset):
         self.transforms = transforms
         self.return_filename = return_filename
         self.num_crops = num_crops
+        self.stratify_bins = stratify_bins
+        self.random_state = random_state
         
         # Load and process metadata
         self.__load_metadata__()
@@ -85,26 +93,69 @@ class UKBDataset(Dataset):
         if missing_files > 0:
             print(f"Removed {missing_files} samples with missing image files")
     
+    def __create_stratified_bins__(self, targets: np.ndarray) -> np.ndarray:
+        """Create stratified bins for target values to enable balanced sampling"""
+        # Create quantile-based bins to ensure roughly equal sample sizes per bin
+        quantiles = np.linspace(0, 1, self.stratify_bins + 1)
+        bin_edges = np.quantile(targets, quantiles)
+        
+        # Handle edge case where all values are the same
+        if len(np.unique(bin_edges)) == 1:
+            return np.zeros(len(targets), dtype=int)
+        
+        # Assign each target to a bin
+        bins = np.digitize(targets, bin_edges[1:-1])
+        
+        # Ensure bins are in valid range [0, stratify_bins-1]
+        bins = np.clip(bins, 0, self.stratify_bins - 1)
+        
+        return bins
+    
     def __process_split__(self) -> None:
-        """Process data split following UKB pattern"""
+        """Process data split with stratified sampling for balanced target distribution"""
         if self.split in ['test', 'all']:
             # For evaluation, use all available data
             print(f"Using all {len(self.metadata)} samples for evaluation")
         else:
-            # Random split into train and validation (80% train, 20% validation)
-            np.random.seed(42)
-            total_len = len(self.metadata)
+            # Stratified split based on target values
+            targets = self.metadata[self.target_column].values.astype('float32')
             
-            # Create random indices
-            indices = np.random.permutation(total_len)
-            train_size = int(0.9 * total_len)
+            # Create stratification bins
+            stratify_labels = self.__create_stratified_bins__(targets)
+            
+            # Print bin distribution
+            unique_bins, bin_counts = np.unique(stratify_labels, return_counts=True)
+            print(f"Target distribution across {len(unique_bins)} bins:")
+            for bin_idx, count in zip(unique_bins, bin_counts):
+                bin_min = targets[stratify_labels == bin_idx].min()
+                bin_max = targets[stratify_labels == bin_idx].max()
+                print(f"  Bin {bin_idx}: {count} samples, range [{bin_min:.2f}, {bin_max:.2f}]")
+            
+            # Stratified train-validation split
+            train_indices, val_indices = train_test_split(
+                np.arange(len(self.metadata)),
+                test_size=0.1,
+                stratify=stratify_labels,
+                random_state=self.random_state
+            )
             
             if self.split == 'train':
-                train_indices = indices[:train_size]
                 self.metadata = self.metadata.iloc[train_indices].reset_index(drop=True)
+                print(f"Train split: {len(train_indices)} samples with stratified sampling")
             elif self.split == 'val':
-                val_indices = indices[train_size:]
                 self.metadata = self.metadata.iloc[val_indices].reset_index(drop=True)
+                print(f"Validation split: {len(val_indices)} samples with stratified sampling")
+            
+            # Verify balanced distribution in splits
+            if self.split in ['train', 'val']:
+                split_targets = self.metadata[self.target_column].values.astype('float32')
+                split_bins = self.__create_stratified_bins__(split_targets)
+                unique_split_bins, split_bin_counts = np.unique(split_bins, return_counts=True)
+                print(f"  {self.split.capitalize()} target distribution:")
+                for bin_idx, count in zip(unique_split_bins, split_bin_counts):
+                    bin_min = split_targets[split_bins == bin_idx].min()
+                    bin_max = split_targets[split_bins == bin_idx].max()
+                    print(f"    Bin {bin_idx}: {count} samples, range [{bin_min:.2f}, {bin_max:.2f}]")
         
         # Get targets
         self.targets = self.metadata[self.target_column].values.astype('float32')

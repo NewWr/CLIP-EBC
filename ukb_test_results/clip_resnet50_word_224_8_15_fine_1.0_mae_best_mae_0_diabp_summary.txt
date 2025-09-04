@@ -4,20 +4,20 @@ Model: clip_resnet50
 Weight path: /opt/DM/OCT/CLIP_Code/CLIP-EBC/checkpoints/ukb/clip_resnet50_word_224_8_15_fine_1.0_mae/best_mae_0.pth
 Number of test samples: 3738
 Target range: [46.00, 127.00]
-Prediction range: [69.59, 94.19]
+Prediction range: [68.81, 95.83]
 
 Basic Metrics:
-MAE: 7.0863
-MSE: 81.4539
-RMSE: 9.0252
-R² Score: 0.2594
+MAE: 7.0029
+MSE: 79.5041
+RMSE: 8.9165
+R² Score: 0.2771
 
 Correlation Metrics:
-Pearson Correlation: 0.5219 (p-value: 3.0325e-260)
-Spearman Correlation: 0.5145 (p-value: 9.6202e-252)
+Pearson Correlation: 0.5305 (p-value: 1.7753e-270)
+Spearman Correlation: 0.5239 (p-value: 1.3722e-262)
 
 Percentage-based Metrics:
-MAPE: 8.81%
-MPE: -0.60%
-NRMSE: 11.14%
-Explained Variance: 0.2624
+MAPE: 8.71%
+MPE: -0.62%
+NRMSE: 11.01%
+Explained Variance: 0.2794

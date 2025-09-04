@@ -139,7 +139,7 @@ class RandomResizedCrop(object):
     def __init__(
         self,
         size: Tuple[int, int],
-        scale: Tuple[float, float] = (0.75, 1.25),
+        scale: Tuple[float, float] = (0.8, 1.0),
     ) -> None:
         """
         Randomly crop an image and resize it to a given size. The aspect ratio is preserved during this process.

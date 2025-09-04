@@ -109,9 +109,20 @@ class CLIP_EBC(nn.Module):
                 param.requires_grad = False
 
         self.bins = bins
-        # 修改 anchor_points 维度以适应全局预测
-        self.anchor_points = torch.tensor(anchor_points, dtype=torch.float32, requires_grad=False).view(1, -1)  # (1, N)
+        self.anchor_points = torch.tensor(anchor_points, dtype=torch.float32, requires_grad=False).view(1, -1)
         
+        # 移除固定的文本提示生成，改为动态生成
+        # self._get_text_prompts()
+        # self._tokenize_text_prompts()
+        # if self.freeze_text_encoder:
+        #     self._extract_text_features()
+        # else:
+        #     self.text_features = None
+        
+        # 初始化时不生成固定的文本特征
+        self.text_features = None
+        self.text_prompts = None
+
         # 添加全局池化层
         # self.global_pool = nn.AdaptiveAvgPool2d(1)
 
@@ -129,10 +140,30 @@ class CLIP_EBC(nn.Module):
         # 每个类别（bin）一个温度参数，初始化为1.0
         self.temperature = nn.Parameter(torch.ones(len(bins)), requires_grad=True)
 
+        # === 新增：单调“分布->数值”映射（替代固定线性期望的锚点） ===
+        self.num_bins = len(bins)
+        anchors_np = np.array(anchor_points, dtype=np.float32)
+        v0_init = float(anchors_np[0])
+        diffs = np.diff(anchors_np)  # 长度 N-1，初始为各bin间距
+        # 将初始间距映射为softplus的逆，保证softplus(deltas) ≈ diffs
+        delta_init = np.log(np.exp(diffs) - 1.0 + 1e-8).astype(np.float32)
+
+        self.calib_v0 = nn.Parameter(torch.tensor(v0_init, dtype=torch.float32))               # 标定起点 v[0]
+        self.calib_deltas = nn.Parameter(torch.tensor(delta_init, dtype=torch.float32))        # 长度 N-1，经softplus后为正
+
+        # === 新增：轻量残差回归头（并联） ===
+        self.residual_pool = nn.AdaptiveAvgPool2d(1)
+        self.residual_mlp = nn.Sequential(
+            nn.Linear(self.clip_embed_dim, self.clip_embed_dim//4),
+            nn.GELU(),
+            nn.Linear(self.clip_embed_dim//4, 1),
+        )
+
 
     def _get_text_prompts(self) -> None:
         """
-        生成血液指标相关的文本提示
+        动态生成血液指标相关的文本提示
+        每次调用都会生成新的随机表述
         """
         # 将bins转换为范围
         indicator_ranges = []
@@ -145,7 +176,25 @@ class CLIP_EBC(nn.Module):
             self.indicator_unit,
             self.prompt_type
         )
-        print(f"Initialized model with text prompts: {self.text_prompts}")
+
+    def refresh_text_prompts(self) -> None:
+        """
+        刷新文本提示，生成新的随机表述
+        可以在每个epoch开始时调用
+        """
+        self._get_text_prompts()
+        print(f"Refreshed text prompts: {self.text_prompts}")
+        
+        # 如果文本编码器被冻结，预先提取文本特征
+        if self.freeze_text_encoder:
+            with torch.no_grad():
+                tokenized_prompts = _clip.tokenize(self.text_prompts)
+                # 将tokenized_prompts移动到与text_encoder相同的设备
+                device = next(self.text_encoder.parameters()).device
+                tokenized_prompts = tokenized_prompts.to(device)
+                self.text_features = self.text_encoder(tokenized_prompts)
+        else:
+            self.text_features = None
 
     def _tokenize_text_prompts(self) -> None:
         self.text_prompts = _clip.tokenize(self.text_prompts)
@@ -215,15 +264,8 @@ class CLIP_EBC(nn.Module):
         return image_features
 
     def forward(self, x: Tensor) -> Union[Tensor, Tuple[Tensor, Tensor]]:
-        """
-        前向传播
-        Returns:
-            训练模式: (global_logits, pred_value) - (B, N), (B,)
-            推理模式: pred_value - (B,)
-        """
         device = x.device
 
-        # 图像特征提取（保持原有流程）
         x = self.image_encoder(x) if self.backbone in resnet_backbones else self._forward_vpt(x)
         if self.reduction != self.encoder_reduction:
             x = F.interpolate(x, scale_factor=self.encoder_reduction / self.reduction, mode="bilinear")
@@ -232,38 +274,55 @@ class CLIP_EBC(nn.Module):
 
         image_features = x.permute(0, 2, 3, 1)  # shape (B, H, W, C)
         
-        # 文本特征提取
-        text_features = self.text_encoder(self.text_prompts.to(device)) if self.text_features is None else self.text_features.to(device)  # shape (N, C)
+        # 动态生成文本特征
+        if self.text_prompts is None:
+            # 如果还没有生成过文本提示，先生成一次
+            self.refresh_text_prompts()
+        
+        if self.text_features is None:
+            # 如果文本编码器没有被冻结，每次都重新编码
+            tokenized_prompts = _clip.tokenize(self.text_prompts).to(device)
+            text_features = self.text_encoder(tokenized_prompts)
+        else:
+            # 如果文本编码器被冻结，使用预先提取的特征
+            text_features = self.text_features.to(device)
 
         # 特征归一化
         image_features = F.normalize(image_features, p=2, dim=-1)
         text_features = F.normalize(text_features, p=2, dim=-1)
 
         # 计算相似度
-        logit_scale = self.logit_scale.exp()
+        # 对 exp(logit_scale) 做上限裁剪，避免 logits 过尖锐导致不稳定
+        logit_scale = self.logit_scale.exp().clamp(max=100.0)
         logits = logit_scale * image_features @ text_features.t()  # (B, H, W, N), logits per image
         logits = logits.permute(0, 3, 1, 2)  # (B, N, H, W)
-
-        # 全局池化：从 (B, N, H, W) 到 (B, N)
-        # global_logits = self.global_pool(logits).squeeze(-1).squeeze(-1)  # (B, N)
-        
-        # B, N, H, W = logits.shape
-        # logits_flat = logits.view(B, N, -1)
-        # global_logits = torch.logsumexp(logits_flat, dim=2)
 
         B, N, H, W = logits.shape
         logits_flat = logits.view(B, N, -1)
         # Log-Mean-Exp池化：从 (B, N, H, W) 到 (B, N)
-        # 应用可学习温度参数的Log-Mean-Exp池化
-        # global_logits_n = τ_n * log(mean(exp(logits_n / τ_n)))
+        # 应用可学习温度参数的Log-Mean-Exp池化，并对温度做范围约束以稳定训练
         # 等价于: τ_n * (logsumexp(logits_n / τ_n) - log(H*W))
-        temperature = self.temperature.to(device).view(1, -1, 1)  # (1, N, 1)
+        temperature = self.temperature.to(device).clamp(min=0.5, max=5.0).view(1, -1, 1)  # (1, N, 1)
         scaled_logits = logits_flat / temperature  # (B, N, H*W)
         global_logits = temperature.squeeze(-1) * (torch.logsumexp(scaled_logits, dim=2) - math.log(H * W))  # (B, N)
 
-        # 计算期望值（加权回归）
+        # 计算分布
         probs = F.softmax(global_logits, dim=1)  # (B, N)
-        pred_value = torch.sum(probs * self.anchor_points.to(device), dim=1)  # (B,)
+
+        # === 修改：用“可学习单调标定向量 v”替代固定 anchor_points 的线性期望 ===
+        # 构造单调递增的标定向量 v: v[0] + cumsum(softplus(deltas))
+        v0 = self.calib_v0.to(device)                                  # 标定起点
+        deltas_pos = F.softplus(self.calib_deltas.to(device))          # (N-1), 保证 >0
+        cumsum = torch.cumsum(deltas_pos, dim=0)                       # (N-1)
+        v = torch.cat([v0.view(1), (v0 + cumsum)], dim=0)              # (N,), 单调递增
+        # 按分布做加权得到“标定后的数值”
+        value_from_dist = torch.sum(probs * v.view(1, -1), dim=1)      # (B,)
+
+        # === 新增：并联轻量残差回归头，修正极端/长尾样本 ===
+        pooled = self.residual_pool(x).squeeze(-1).squeeze(-1)         # (B, C)
+        residual = self.residual_mlp(pooled).squeeze(-1)               # (B,)
+
+        pred_value = value_from_dist + residual                        # (B,)
 
         if self.training:
             return global_logits, pred_value
