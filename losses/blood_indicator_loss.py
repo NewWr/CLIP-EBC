@@ -8,14 +8,26 @@ class FocalLoss(nn.Module):
     """
     Focal Loss实现，用于处理类别不平衡问题
     """
-    def __init__(self, alpha: float = 1.0, gamma: float = 2.0, reduction: str = 'mean'):
+    def __init__(self, alpha: float = 1.0, gamma: float = 2.0, reduction: str = 'mean',
+                 label_smoothing: float = 0.0, class_weights: Optional[List[float]] = None):
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.reduction = reduction
+        self.label_smoothing = label_smoothing
+        if class_weights is not None:
+            self.register_buffer("class_weights", torch.tensor(class_weights, dtype=torch.float32))
+        else:
+            self.class_weights = None
         
     def forward(self, inputs: Tensor, targets: Tensor) -> Tensor:
-        ce_loss = F.cross_entropy(inputs, targets, reduction='none')
+        ce_loss = F.cross_entropy(
+            inputs,
+            targets,
+            reduction='none',
+            label_smoothing=self.label_smoothing,
+            weight=self.class_weights
+        )
         pt = torch.exp(-ce_loss)
         focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
         
@@ -36,12 +48,14 @@ class BloodIndicatorLoss(nn.Module):
         self,
         indicator_ranges: List[Tuple[float, float]],
         weight_regression: float = 1.0,
-        weight_classification: float = 1.0,
-        regression_loss: str = "mse",  # "mse", "mae", "huber"
+        weight_classification: float = 0.5,
+        regression_loss: str = "huber",
         use_uncertainty: bool = False,
         bins: Optional[List[Tuple[float, float]]] = None,
-        focal_alpha: float = 1.0,
-        focal_gamma: float = 2.0,
+        focal_alpha: float = 0.25,
+        focal_gamma: float = 1.0,
+        label_smoothing: float = 0.1,
+        class_weights: Optional[List[float]] = None,
         **kwargs: Any
     ) -> None:
         super().__init__()
@@ -59,8 +73,14 @@ class BloodIndicatorLoss(nn.Module):
         self.weight_classification = weight_classification
         self.use_uncertainty = use_uncertainty
 
-        # 分类损失：使用Focal Loss替代标准交叉熵
-        self.focal_loss_fn = FocalLoss(alpha=focal_alpha, gamma=focal_gamma, reduction="mean")
+        # 分类损失：Focal Loss + 标签平滑/类别权重
+        self.focal_loss_fn = FocalLoss(
+            alpha=focal_alpha,
+            gamma=focal_gamma,
+            reduction="mean",
+            label_smoothing=label_smoothing,
+            class_weights=class_weights
+        )
         
         # 回归损失
         regression_loss = regression_loss.lower()
@@ -89,17 +109,14 @@ class BloodIndicatorLoss(nn.Module):
         batch_size = values.size(0)
         class_labels = torch.zeros(batch_size, dtype=torch.long, device=device)
 
-        # 先按 bins 内部命中
         for idx, (low, high) in enumerate(self.bins):
             mask = (values >= low) & (values <= high)
             class_labels[mask] = idx
 
-        # 对越界样本进行边界归类
         first_low = self.bins[0][0]
         last_high = self.bins[-1][1]
         class_labels[values < first_low] = 0
         class_labels[values > last_high] = self.num_classes - 1
-
         return class_labels
     
     def forward(
@@ -116,23 +133,15 @@ class BloodIndicatorLoss(nn.Module):
             f"Batch sizes must match: {pred_class.size(0)}, {pred_value.size(0)}, {target_value.size(0)}"
         
         device = pred_class.device
-
-        # 分类目标
         target_class = self._classify_indicator(target_value)  # [B]
-
-        # === 分类损失：使用Focal Loss ===
         classification_loss = self.focal_loss_fn(pred_class, target_class)
-
-        # === 回归损失：原始计算 ===
         regression_loss = self.regression_fn(pred_value, target_value)
 
-        # 不确定性损失（可选）
         uncertainty_loss = torch.tensor(0.0, device=device)
         if self.use_uncertainty and pred_uncertainty is not None:
             prediction_error = torch.abs(pred_value - target_value)
             uncertainty_loss = self.uncertainty_fn(pred_uncertainty, prediction_error)
 
-        # 总损失
         total_loss = (
             self.weight_classification * classification_loss + 
             self.weight_regression * regression_loss
@@ -140,7 +149,6 @@ class BloodIndicatorLoss(nn.Module):
         if self.use_uncertainty:
             total_loss += 0.1 * uncertainty_loss
 
-        # 损失信息
         loss_info = {
             "total_loss": total_loss.detach(),
             "classification_loss": classification_loss.detach(),

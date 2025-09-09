@@ -12,7 +12,7 @@ num_to_word = {
     "70": "seventy", "71": "seventy-one", "72": "seventy-two", "73": "seventy-three", "74": "seventy-four", "75": "seventy-five", "76": "seventy-six", "77": "seventy-seven", "78": "seventy-eight", "79": "seventy-nine",
     "80": "eighty", "81": "eighty-one", "82": "eighty-two", "83": "eighty-three", "84": "eighty-four", "85": "eighty-five", "86": "eighty-six", "87": "eighty-seven", "88": "eighty-eight", "89": "eighty-nine",
     "90": "ninety", "91": "ninety-one", "92": "ninety-two", "93": "ninety-three", "94": "ninety-four", "95": "ninety-five", "96": "ninety-six", "97": "ninety-seven", "98": "ninety-eight", "99": "ninety-nine",
-    "100": "one hundred", "200": "two hundred", "300": "three hundred", "400": "four hundred", "500": "five hundred", "600": "six hundred", "700": "seven hundred", "800": "eight hundred", "900": "nine hundred",
+    "100": "one hundred", "104": "one hundred and four", "105": "one hundred and five", "200": "two hundred", "300": "three hundred", "400": "four hundred", "500": "five hundred", "600": "six hundred", "700": "seven hundred", "800": "eight hundred", "900": "nine hundred",
     "1000": "one thousand"
 }
 
@@ -101,35 +101,120 @@ def format_blood_indicator(
     # 15 个 bin 的视网膜相关短标签（精简、无括号）
     bin_label_syns = [
         # 0: 45–59
-        ["reduced retinal perfusion", "low microvascular tone", "retinal hypoperfusion pattern"],
+        [
+    "wider arteriolar lumens",
+    "faint arteriolar light reflection",
+    "normal venular vessel caliber",
+    "clear optic disc borders"
+  ],
         # 1: 60–69
-        ["low-normal retinal perfusion", "lower-normal vascular tone", "retinal circulation at low-normal"],
+        [
+    "larger arteriolar pathways",
+    "subtle arteriolar light sheen",
+    "slightly wider venular appearance",
+    "sharp optic disc contours"
+  ],
         # 2: 70–73
-        ["normal retinal microvasculature", "typical retinal appearance", "physiologic vessel caliber"],
+        [
+    "typical arteriolar lumen size",
+    "normal arteriolar light reflection",
+    "typical venular vessel diameter",
+    "unimpeded arteriovenous crossings"
+  ],
         # 3: 74–77
-        ["upper-normal arteriolar tone", "mild trend to arteriolar narrowing", "borderline vascular tension"],
+        [
+    "minor arteriolar caliber reduction",
+    "slightly brighter arteriolar sheen",
+    "regular venular vessel width",
+    "absent arteriovenous crossing distortions"
+  ],
         # 4: 78–79
-        ["borderline retinal stress", "subtle arteriolar narrowing", "borderline vascular load"],
+        [
+    "subtle arteriolar attenuation",
+    "mild arteriolar light streak",
+    "subtle arteriovenous crossing concealment",
+    "normal fundus background coloring"
+  ],
         # 5: 80–80
-        ["borderline retinal stress", "subtle arteriolar narrowing", "borderline vascular load"],
+        [
+    "mild arteriolar caliber narrowing",
+    "noticeable arteriolar light stripe",
+    "mild arteriovenous crossing indentations",
+    "slight venular winding paths",
+    "slightly deeper fundus hue"
+  ],
         # 6: 81–82
-        ["early retinopathy signs", "arteriolar narrowing", "arteriovenous nicking"],
+        [
+    "moderate arteriolar narrowing",
+    "prominent arteriolar light reflex",
+    "moderate arteriovenous crossing nicks",
+    "mild venular tortuous course",
+    "mildly darker fundus tone"
+  ],
         # 7: 83–84
-        ["early retinopathy signs", "arteriolar narrowing", "increased vascular tortuosity"],
+        [
+    "further arteriolar caliber decrease",
+    "incipient copper-wire reflection",
+    "pronounced arteriovenous crossing deflections",
+    "increased venular tortuosity",
+    "subtle fundus background deepening"
+  ],
         # 8: 85–85
-        ["early retinopathy signs", "arteriolar narrowing", "arteriovenous nicking"],
+        [
+    "significant arteriolar thinning",
+    "distinct copper-wire arteriolar appearance",
+    "marked arteriovenous crossing compression",
+    "prominent venular twisting pattern",
+    "darker fundus background hue"
+  ],
         # 9: 86–87
-        ["early retinopathy signs", "arteriolar narrowing", "increased vascular tortuosity"],
+        [
+    "severe arteriolar caliber reduction",
+    "broader copper-wire arteriolar reflex",
+    "extensive arteriovenous crossing alterations",
+    "highly tortuous venular pathways",
+    "clear peripapillary disc margins"
+  ],
         # 10: 88–89
-        ["early retinopathy signs", "arteriolar narrowing", "arteriovenous nicking"],
+        [
+    "very severe arteriolar thinning",
+    "early silver-wire arteriolar sheen",
+    "widespread arteriovenous crossing indentations",
+    "localized venular caliber variations",
+    "deeper fundus hue with subtle sheen"
+  ],
         # 11: 90–90
-        ["moderate retinopathy risk", "retinal hemorrhages", "hard exudates"],
+        [
+    "silver-wire arteriolar appearance",
+    "prominent silver-wire light reflex",
+    "marked distal arteriovenous abnormalities",
+    "mild venular lumen expansion",
+    "subtle optic disc margin blurring"
+  ],
         # 12: 91–94
-        ["moderate retinopathy risk", "cotton wool spots", "retinal hemorrhages"],
+        [
+    "widespread silver-wire appearance",
+    "intense silver-wire light reflection",
+    "severe distal arteriovenous narrowing",
+    "moderate localized venular widening",
+    "mild optic disc border haziness"
+  ],
         # 13: 95–104
-        ["moderate retinopathy risk", "venous beading", "clustered exudates"],
+        [
+    "thread-like arteriolar attenuation",
+    "maximal silver-wire arteriolar sheen",
+    "generalized arteriovenous crossing banking",
+    "prominent focal venular widening",
+    "moderate optic disc margin indistinctness"
+  ],
         # 14: 105–inf
-        ["severe retinopathy risk", "optic disc edema", "widespread hemorrhages"],
+        [
+    "extreme arteriolar thread-like appearance",
+    "diffuse silver-wire light reflection",
+    "severe peripapillary arteriovenous distortions",
+    "marked focal venular fullness",
+    "peripapillary vessel crowding"
+  ]
     ]
 
     def _is_diastolic(name: str) -> bool:
@@ -166,7 +251,8 @@ def format_blood_indicator(
     name_pool = plain_name_syns if use_plain else pro_name_syns
 
     is_dbp = _is_diastolic(indicator_name)
-    unit_str = unit or ("mmHg" if is_dbp else "")
+    # unit_str = unit or ("mmHg" if is_dbp else "")
+    unit_str = unit
 
     outputs = []
     for i, r in enumerate(indicator_ranges or []):

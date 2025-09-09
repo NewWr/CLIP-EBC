@@ -156,6 +156,7 @@ class CLIP_EBC(nn.Module):
         self.residual_mlp = nn.Sequential(
             nn.Linear(self.clip_embed_dim, self.clip_embed_dim//4),
             nn.GELU(),
+            nn.Dropout(p=0.5),
             nn.Linear(self.clip_embed_dim//4, 1),
         )
 
@@ -183,7 +184,7 @@ class CLIP_EBC(nn.Module):
         可以在每个epoch开始时调用
         """
         self._get_text_prompts()
-        print(f"Refreshed text prompts: {self.text_prompts}")
+        # print(f"Refreshed text prompts: {self.text_prompts}")
         
         # 如果文本编码器被冻结，预先提取文本特征
         if self.freeze_text_encoder:

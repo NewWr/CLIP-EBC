@@ -79,12 +79,19 @@ def get_ukb_dataloader(args: ArgumentParser, split: str = "train", ddp: bool = F
     
     # Define transforms for UKB dataset
     if split == "train":  # train, strong augmentation
+        # 折中方案 - 按重要性分组
         transforms = Compose([
             datasets.RandomResizedCrop((args.input_size, args.input_size), scale=(args.min_scale, args.max_scale)),
             datasets.RandomHorizontalFlip(),
+            # 核心颜色增强
             datasets.RandomApply([
                 datasets.ColorJitter(brightness=args.brightness, contrast=args.contrast, saturation=args.saturation, hue=args.hue),
             ], p=args.jitter_prob),
+            # 可选增强组合
+            datasets.RandomApply([
+                datasets.RandomGrayscale(p=0.1),
+                datasets.PepperSaltNoise(saltiness=0.001, spiciness=0.001),
+            ], p=0.2),
         ])
     else:
         transforms = None
