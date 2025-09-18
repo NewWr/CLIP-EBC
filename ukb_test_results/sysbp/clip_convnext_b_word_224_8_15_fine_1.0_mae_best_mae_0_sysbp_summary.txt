@@ -1,0 +1,23 @@
+UKB Test Results for sysbp
+==================================================
+Model: clip_convnext_b
+Weight path: /opt/DM/OCT/CLIP_Code/CLIP-EBC/checkpoints/ukb/clip_convnext_b_word_224_8_15_fine_1.0_mae/best_mae_0.pth
+Number of test samples: 3738
+Target range: [74.00, 224.00]
+Prediction range: [115.82, 162.42]
+
+Basic Metrics:
+MAE: 11.8741
+MSE: 233.4248
+RMSE: 15.2782
+R² Score: 0.3350
+
+Correlation Metrics:
+Pearson Correlation: 0.5851 (p-value: 0.0000e+00)
+Spearman Correlation: 0.5858 (p-value: 0.0000e+00)
+
+Percentage-based Metrics:
+MAPE: 8.67%
+MPE: -1.02%
+NRMSE: 10.19%
+Explained Variance: 0.3353

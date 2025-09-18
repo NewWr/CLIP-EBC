@@ -1,0 +1,113 @@
+{
+  "pro_name_syns": [
+    "systolic blood pressure"
+  ],
+  "plain_name_syns": [
+    "systolic blood pressure"
+  ],
+  "0: 78-111": [
+    "slender pink arterioles",
+    "even disc field",
+    "pale copper background",
+    "fine venular caliber",
+    "faint macular glow"
+  ],
+  "1: 112-117": [
+    "thin light reflex streak",
+    "soft copper background",
+    "delicate venular trace",
+    "mild disc pallor",
+    "subtle macular sheen"
+  ],
+  "2: 118-121": [
+    "narrow bright reflex stripe",
+    "muted copper tint",
+    "slight venular undulation",
+    "early disc rim fade",
+    "dim macular glint"
+  ],
+  "3: 122-124": [
+    "attenuated silvery arterioles",
+    "dull bronze background",
+    "gentle venular wave",
+    "faint disc margin blur",
+    "muted foveal shimmer"
+  ],
+  "4: 125-128": [
+    "pinched silvery reflex lines",
+    "bronze background haze",
+    "mild venular loop",
+    "blurred disc border",
+    "dusky macular center"
+  ],
+  "5: 129-131": [
+    "threadlike white reflex streaks",
+    "bronze hue shift",
+    "moderate venular coil",
+    "soft disc edge fade",
+    "shadowed macular zone"
+  ],
+  "6: 132-134": [
+    "fine white reflex ribbons",
+    "bronze dusk background",
+    "noticeable venular arc",
+    "pale disc rim",
+    "darkened macular patch"
+  ],
+  "7: 135-137": [
+    "sharp white reflex flashes",
+    "deep bronze cast",
+    "accentuated venular curve",
+    "whitened disc margin",
+    "dimmed macular core"
+  ],
+  "8: 138-141": [
+    "stark white reflex glare",
+    "bronze ochre dusk",
+    "pronounced venular kink",
+    "milky disc halo",
+    "eclipsed macular spot"
+  ],
+  "9: 142-144": [
+    "brilliant reflex streaks",
+    "bronze ochre veil",
+    "marked venular tortuosity",
+    "hazy disc outline",
+    "veiled macular field"
+  ],
+  "10: 145-149": [
+    "intense silvery reflex blaze",
+    "bronze rust background",
+    "tight venular spiral",
+    "cloudy disc contour",
+    "veiled foveal pit"
+  ],
+  "11: 150-153": [
+    "blazing white reflex flare",
+    "bronze rust haze",
+    "coiled venular loops",
+    "cloudy disc surface",
+    "shadowed foveal dimple"
+  ],
+  "12: 154-159": [
+    "blinding reflex streak glare",
+    "bronze rust shadow",
+    "tangled venular corkscrew",
+    "veiled disc face",
+    "dark foveal pit"
+  ],
+  "13: 160-169": [
+    "silver lightning reflex",
+    "bronze rust dimness",
+    "knotted venular tangle",
+    "veiled disc center",
+    "blackened foveal hollow"
+  ],
+  "14: 170-inf": [
+    "blinding reflex lightning",
+    "bronze rust gloom",
+    "dense venular snarl",
+    "dimmed disc hub",
+    "black foveal void"
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "0: 45-59": [
+    "wider arteriolar lumens",
+    "faint arteriolar light reflection",
+    "normal venular vessel caliber",
+    "clear optic disc borders"
+  ],
+  "1: 60-69": [
+    "larger arteriolar pathways",
+    "subtle arteriolar light sheen",
+    "slightly wider venular appearance",
+    "sharp optic disc contours"
+  ],
+  "2: 70-73": [
+    "typical arteriolar lumen size",
+    "normal arteriolar light reflection",
+    "typical venular vessel diameter",
+    "unimpeded arteriovenous crossings"
+  ],
+  "3: 74-77": [
+    "minor arteriolar caliber reduction",
+    "slightly brighter arteriolar sheen",
+    "regular venular vessel width",
+    "absent arteriovenous crossing distortions"
+  ],
+  "4: 78-79": [
+    "subtle arteriolar attenuation",
+    "mild arteriolar light streak",
+    "subtle arteriovenous crossing concealment",
+    "normal fundus background coloring"
+  ],
+  "5: 80": [
+    "mild arteriolar caliber narrowing",
+    "noticeable arteriolar light stripe",
+    "mild arteriovenous crossing indentations",
+    "slight venular winding paths",
+    "slightly deeper fundus hue"
+  ],
+  "6: 81-82": [
+    "moderate arteriolar narrowing",
+    "prominent arteriolar light reflex",
+    "moderate arteriovenous crossing nicks",
+    "mild venular tortuous course",
+    "mildly darker fundus tone"
+  ],
+  "7: 83-84": [
+    "further arteriolar caliber decrease",
+    "incipient copper-wire reflection",
+    "pronounced arteriovenous crossing deflections",
+    "increased venular tortuosity",
+    "subtle fundus background deepening"
+  ],
+  "8: 85": [
+    "significant arteriolar thinning",
+    "distinct copper-wire arteriolar appearance",
+    "marked arteriovenous crossing compression",
+    "prominent venular twisting pattern",
+    "darker fundus background hue"
+  ],
+  "9: 86-87": [
+    "severe arteriolar caliber reduction",
+    "broader copper-wire arteriolar reflex",
+    "extensive arteriovenous crossing alterations",
+    "highly tortuous venular pathways",
+    "clear peripapillary disc margins"
+  ],
+  "10: 88-89": [
+    "very severe arteriolar thinning",
+    "early silver-wire arteriolar sheen",
+    "widespread arteriovenous crossing indentations",
+    "localized venular caliber variations",
+    "deeper fundus hue with subtle sheen"
+  ],
+  "11: 90": [
+    "silver-wire arteriolar appearance",
+    "prominent silver-wire light reflex",
+    "marked distal arteriovenous abnormalities",
+    "mild venular lumen expansion",
+    "subtle optic disc margin blurring"
+  ],
+  "12: 91-94": [
+    "widespread silver-wire appearance",
+    "intense silver-wire light reflection",
+    "severe distal arteriovenous narrowing",
+    "moderate localized venular widening",
+    "mild optic disc border haziness"
+  ],
+  "13: 95-104": [
+    "thread-like arteriolar attenuation",
+    "maximal silver-wire arteriolar sheen",
+    "generalized arteriovenous crossing banking",
+    "prominent focal venular widening",
+    "moderate optic disc margin indistinctness"
+  ],
+  "14: 105-inf": [
+    "extreme arteriolar thread-like appearance",
+    "diffuse silver-wire light reflection",
+    "severe peripapillary arteriovenous distortions",
+    "marked focal venular fullness",
+    "peripapillary vessel crowding"
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "pro_name_syns": [
+    "HbA1c",
+    "Hemoglobin A1C",
+    "Glycated Hemoglobin",
+    "Glycosylated Hemoglobin",
+    "Glycohemoglobin",
+    "NycoCard HbA1c",
+    "HbA1c ELISA Kit"
+  ],
+  "plain_name_syns": [
+    "HbA1c",
+    "Hemoglobin A1C",
+    "Glycated Hemoglobin",
+    "Glycosylated Hemoglobin",
+    "Glycohemoglobin",
+    "NycoCard HbA1c",
+    "HbA1c ELISA Kit"
+  ],
+  "1: 20-29.3": [
+    "faint arteriolar light streak",
+    "slight macular reflex dulling",
+    "minimal venular caliber variation",
+    "subtle background hue shift"
+  ],
+  "2: 29.3-30.8": [
+    "mild arteriolar light streak",
+    "early macular reflex fade",
+    "few dot blot microdots",
+    "soft background hue drift"
+  ],
+  "3: 30.8-31.8": [
+    "soft arteriolar light stripe",
+    "mild macular reflex dimming",
+    "scattered dot blot specks",
+    "slight venular waviness"
+  ],
+  "4: 31.8-32.6": [
+    "thin arteriolar light band",
+    "reduced macular reflex glow",
+    "sparse microaneurysm dots",
+    "mild venular tortuosity"
+  ],
+  "5: 32.6-33.3": [
+    "pale arteriolar light ribbon",
+    "muted macular reflex center",
+    "occasional hard exudate flecks",
+    "mild venular loop"
+  ],
+  "6: 33.3-33.9": [
+    "dim arteriolar light strip",
+    "faint macular reflex loss",
+    "clustered hard exudate flecks",
+    "moderate venular loop"
+  ],
+  "7: 33.9-34.5": [
+    "faint arteriolar light line",
+    "blurred macular reflex spot",
+    "yellow hard exudate clump",
+    "moderate venular coil"
+  ],
+  "8: 34.5-35.1": [
+    "narrow arteriolar light thread",
+    "indistinct macular reflex patch",
+    "bright hard exudate cluster",
+    "marked venular coil"
+  ],
+  "9: 35.1-35.7": [
+    "threadlike arteriolar light trace",
+    "absent macular reflex patch",
+    "shiny hard exudate plaque",
+    "marked venular twist"
+  ],
+  "10: 35.7-36.4": [
+    "barely visible arteriolar glint",
+    "dull foveal reflex spot",
+    "glistening exudate plaque edge",
+    "venular bead segment"
+  ],
+  "11: 36.4-37.2": [
+    "intermittent arteriolar glint",
+    "gray foveal reflex patch",
+    "confluent exudate plaque rim",
+    "multiple venular beads"
+  ],
+  "12: 37.2-38.1": [
+    "patchy arteriolar glint loss",
+    "gray foveal reflex zone",
+    "dense exudate plaque rim",
+    "cotton wool patch"
+  ],
+  "13: 38.1-39.4": [
+    "broken arteriolar glint segments",
+    "dark foveal reflex zone",
+    "thick exudate plaque border",
+    "fluffy cotton wool spot"
+  ],
+  "14: 39.4-41.8": [
+    "absent arteriolar glint segments",
+    "black foveal reflex field",
+    "elevated exudate plaque margin",
+    "prominent cotton wool spots"
+  ],
+  "15: 41.8-inf": [
+    "silver wire arterioles",
+    "black foveal field",
+    "raised exudate plateau edge",
+    "crowded disc vessels",
+    "neovascular frond arc"
+  ]
+}

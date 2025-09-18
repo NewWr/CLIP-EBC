@@ -1,0 +1,23 @@
+UKB Test Results for diabp
+==================================================
+Model: clip_convnext_b
+Weight path: /opt/DM/OCT/CLIP_Code/CLIP-EBC/checkpoints/ukb/clip_convnext_b_word_224_8_15_fine_1.0_mae/best_mae_0.pth
+Number of test samples: 3738
+Target range: [46.00, 127.00]
+Prediction range: [69.56, 95.16]
+
+Basic Metrics:
+MAE: 6.9602
+MSE: 77.8992
+RMSE: 8.8261
+R² Score: 0.2917
+
+Correlation Metrics:
+Pearson Correlation: 0.5439 (p-value: 6.9994e-287)
+Spearman Correlation: 0.5358 (p-value: 8.0238e-277)
+
+Percentage-based Metrics:
+MAPE: 8.76%
+MPE: -1.82%
+NRMSE: 10.90%
+Explained Variance: 0.2938
